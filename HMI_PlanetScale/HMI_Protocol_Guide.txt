@@ -1,0 +1,95 @@
+================================================================================
+                    DWIN HMI PLANET SCALE PROTOCOL GUIDE
+================================================================================
+
+1. SCREEN HARDWARE SPECIFICATION
+   - Screen Model: DWIN DMG80480T050_09WTR (5-inch, 800x480 resolution, T5L1 CPU)
+   - Interface Baud Rate: 115200 (Default serial configuration)
+
+2. VARIABLE POINTERS (VP MAP)
+   - VP 0x0014 : System page address containing current Image ID (Read-only)
+   - VP 0x2000 : Age Variable (Data input and display box)
+   - VP 0x3000 : Weight Variable (Display box, configured with 2 decimal places)
+
+3. IMAGE PAGE ID MAPPING
+   - Page 0  : HOME Page (Image 00_HOME.bmp)
+   - Page 1  : Mercury (Image 01_mercury.bmp)
+   - Page 2  : Venus (Image 02_venus.bmp)
+   - Page 3  : Earth (Image 03_earth.bmp)
+   - Page 4  : Mars (Image 04_mars.bmp)
+   - Page 5  : Jupiter (Image 05_jupiter.bmp)
+   - Page 6  : Saturn (Image 06_saturn.bmp)
+   - Page 7  : Uranus (Image 07_uranus.bmp)
+   - Page 8  : Neptune (Image 08_neptune.bmp)
+   - Page 9  : Pluto (Image 09_pluto.bmp)
+   - Page 10 : Moon (Image 10_moon.bmp)
+   - Page 11 : KEYBOARD Page (Image 11_keyboard.bmp)
+
+4. PLANETARY GRAVITY FACTORS (MULTIPLIERS)
+   - Mercury : 0.378
+   - Venus   : 0.907
+   - Earth   : 1.000
+   - Mars    : 0.377
+   - Jupiter : 2.528
+   - Saturn  : 1.064
+   - Uranus  : 0.889
+   - Neptune : 1.125
+   - Pluto   : 0.067
+   - Moon    : 0.166
+
+5. HEXADECIMAL SERIAL PACKETS REFERENCE
+
+   A. Poll Page ID Command (Sent from ESP32 to Screen)
+      5A A5 04 83 00 14 01
+      - 5A A5 : Frame Header
+      - 04    : Remaining packet length (4 bytes)
+      - 83    : Read variable command
+      - 00 14 : Target VP address (System Page register)
+      - 01    : Length of words to read (1 word = 2 bytes)
+
+   B. Page ID Response (Sent from Screen to ESP32)
+      5A A5 06 83 00 14 01 00 PAGE_ID
+      - 5A A5 : Frame Header
+      - 06    : Remaining packet length (6 bytes)
+      - 83    : Response indicator command
+      - 00 14 : VP address (System Page register)
+      - 01    : Words count (1 word)
+      - 00    : Data High Byte
+      - PAGE_ID : Data Low Byte (Page number 0-11)
+
+   C. Age Value Upload (Sent from Screen to ESP32 when keyboard input is submitted)
+      5A A5 06 83 20 00 01 AGE_HIGH AGE_LOW
+      - 5A A5 : Frame Header
+      - 06    : Remaining packet length (6 bytes)
+      - 83    : Response indicator command
+      - 20 00 : Age VP address
+      - 01    : Words count (1 word)
+      - AGE_HIGH : Age integer high byte
+      - AGE_LOW  : Age integer low byte
+
+   D. Write Weight Command (Sent from ESP32 to Screen to update weight displays)
+      5A A5 05 82 30 00 WT_HIGH WT_LOW
+      - 5A A5 : Frame Header
+      - 05    : Remaining packet length (5 bytes)
+      - 82    : Write to variable command
+      - 30 00 : Weight VP address
+      - WT_HIGH : Calculated weight high byte (Weight in Kg * 100)
+      - WT_LOW  : Calculated weight low byte (Weight in Kg * 100)
+
+   E. Write Age Command (Sent from ESP32 to Screen to sync age display across pages)
+      5A A5 05 82 20 00 AGE_HIGH AGE_LOW
+      - 5A A5 : Frame Header
+      - 05    : Remaining packet length (5 bytes)
+      - 82    : Write to variable command
+      - 20 00 : Age VP address
+      - AGE_HIGH : Age integer high byte
+      - AGE_LOW  : Age integer low byte
+
+6. ESP32 HARDWARE WIRING DIAGRAM
+   - HX711 DT   -> ESP32 GPIO 4
+   - HX711 SCK  -> ESP32 GPIO 5
+   - Screen RXD -> ESP32 GPIO 17 (TX2)
+   - Screen TXD -> ESP32 GPIO 16 (RX2)
+   - Ground     -> Common Ground (GND)
+   - VCC Screen -> 5.0V external power source (min 1A)
+================================================================================
